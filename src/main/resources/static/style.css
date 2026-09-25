@@ -1,0 +1,245 @@
+:root {
+  --bg: #f4f7fc;
+  --card: #ffffff;
+  --pri: #1a365d;
+  --pri-light: #2b6cb0;
+  --txt: #2d3748;
+  --bad: #e53e3e;
+  --ok: #38a169;
+  --mut: #718096;
+  --border: #e2e8f0;
+}
+
+* {
+  box-sizing: border-box;
+  transition: all 0.2s ease-in-out;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: linear-gradient(rgba(244, 247, 252, 0.4), rgba(26, 54, 93, 0.6)),
+  url('https://images.unsplash.com/photo-1468271401633-5036977cc51e?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D') no-repeat center center fixed;
+  background-size: cover;
+  color: var(--txt);
+  line-height: 1.5;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+main {
+  max-width: 1040px;
+  margin: 3rem auto;
+  padding: 0 1.5rem;
+}
+
+h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--pri);
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 2px solid var(--pri);
+  padding-bottom: 0.5rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--pri);
+  margin-top: 0;
+  margin-bottom: 1.2rem;
+}
+
+.card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--border);
+}
+
+.bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, var(--pri) 0%, #2a4365 100%);
+  color: #fff;
+  border: none;
+}
+
+.bar h2 {
+  color: #fff;
+}
+
+form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+form h3 {
+  flex-basis: 100%;
+  margin: 0 0 0.5rem 0;
+  color: var(--pri);
+  font-size: 1.1rem;
+}
+
+input, select {
+  padding: 0.65rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font: inherit;
+  background-color: #fff;
+  color: var(--txt);
+  flex: 1 1 200px;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--pri-light);
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+}
+
+button {
+  padding: 0.65rem 1.25rem;
+  border: 0;
+  border-radius: 8px;
+  background: var(--pri);
+  color: #fff;
+  font-weight: 600;
+  font: inherit;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+button:hover {
+  background: var(--pri-light);
+  transform: translateY(-1px);
+}
+
+button.secondary {
+  background: #edf2f7;
+  color: var(--txt);
+  border: 1px solid var(--border);
+}
+
+button.secondary:hover {
+  background: var(--border);
+}
+
+button.danger {
+  background: var(--bad);
+}
+
+button.danger:hover {
+  background: #c53030;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.2rem;
+  background: #edf2f7;
+  padding: 0.3rem;
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.tabs button {
+  background: transparent;
+  color: var(--mut);
+  box-shadow: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+}
+
+.tabs button:hover {
+  color: var(--txt);
+  transform: none;
+}
+
+.tabs button.active {
+  background: var(--card);
+  color: var(--pri);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.table-wrap {
+  overflow-x: auto;
+  padding: 0;
+}
+
+.table-wrap h2 {
+  padding: 1.5rem 1.5rem 0 1.5rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+th, td {
+  text-align: left;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+th {
+  background: #f7fafc;
+  color: var(--mut);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+tr:hover td {
+  background-color: #f7fafc;
+}
+
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  display: inline-block;
+}
+
+.badge.ACTIVE { background: var(--ok); }
+.badge.MAINTENANCE { background: #dd6b20; }
+.badge.WINCH { background: #3182ce; }
+.badge.TOW { background: #dd6b20; }
+
+#msg {
+  min-height: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  display: none;
+}
+
+#msg.ok { color: var(--ok); background: #f0fff4; display: block; border: 1px solid #c6f6d5; }
+#msg.err { color: var(--bad); background: #fff5f5; display: block; border: 1px solid #fed7d7; }
+
+#chartWrap {
+  position: relative;
+  height: 320px;
+  width: 100%;
+}
+
+.divider {
+  border: 0;
+  border-top: 2px dashed var(--border);
+  margin: 2.5rem 0;
+}

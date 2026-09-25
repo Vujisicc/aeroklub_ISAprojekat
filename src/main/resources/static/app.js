@@ -8,9 +8,9 @@ const saveSession = d => KEYS.forEach(k => localStorage.setItem(k, d[k]));
 const clearSession = () => KEYS.forEach(k => localStorage.removeItem(k));
 const role = () => localStorage.getItem('role');
 
-let cache = [], refreshing = null, msgTimer;
+let gliderCache = [], flightCache = [], hoursChart, refreshing = null, msgTimer;
 
-/* ---------- UI helpers ---------- */
+/*ui stvari*/
 function notify(text, isErr = false) {
   const el = $('#msg');
   el.textContent = text;
@@ -25,19 +25,24 @@ function showTab(tab) {
   document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
 }
 
-function render() {
+function expire() { clearSession(); render(); }
+
+async function render() {
   const logged = !!localStorage.getItem('accessToken');
   $('#auth').hidden = logged;
   $('#dash').hidden = !logged;
   if (!logged) return;
+
   $('#who').textContent = `${localStorage.getItem('username')} (${role()})`;
-  $('#gForm').hidden = !['ADMIN', 'PILOT'].includes(role());
-  loadGliders();
+  $('#admin-section').style.display = role() === 'ADMIN' ? 'block' : 'none';
+
+  try {
+    await loadGliders();
+    await loadFlights();
+  } catch (e) { notify(e.message, true); }
 }
 
-function expire() { clearSession(); render(); }
-
-/* ---------- Auth calls (no interceptor) ---------- */
+/*Auth pozivi*/
 async function authCall(path, payload) {
   const res = await fetch(`${API}/auth/${path}`, {
     method: 'POST',
@@ -57,7 +62,7 @@ function refreshTokens() {
   return refreshing;
 }
 
-/* ---------- Interceptor-style fetch: on 401 -> refresh -> retry once ---------- */
+/* presretanje */
 async function api(path, opts = {}, retried = false) {
   const headers = { 'Content-Type': 'application/json' };
   const token = localStorage.getItem('accessToken');
@@ -81,26 +86,27 @@ async function api(path, opts = {}, retried = false) {
   return res.status === 204 ? null : res.json();
 }
 
-/* ---------- Gliders CRUD ---------- */
+/* jedrilice - dropdown, chart i admin tabela*/
 async function loadGliders() {
-  try {
-    cache = await api('/gliders');
-    const admin = role() === 'ADMIN';
-    $('#tbody').innerHTML = cache.map(g => `
+  gliderCache = await api('/gliders');
+
+  $('#fGlider').innerHTML = '<option value="">Unesi jedrilicu…</option>' +
+    gliderCache.map(g => `<option value="${g.id}">${esc(g.registrationMarks)} — ${esc(g.model)}</option>`).join('');
+
+  if (role() === 'ADMIN') {
+    $('#tbody').innerHTML = gliderCache.map(g => `
       <tr>
         <td>${g.id}</td>
         <td>${esc(g.registrationMarks)}</td>
         <td>${esc(g.model)}</td>
         <td>${g.year}</td>
-        <td><span class="badge ${esc(g.status)}">${esc(g.status)}</span></td>
-        <td>${admin
-          ? `<button data-edit="${g.id}">Edit</button> <button class="danger" data-del="${g.id}">Delete</button>`
-          : '—'}</td>
-      </tr>`).join('') || '<tr><td colspan="6">No gliders yet</td></tr>';
-  } catch (e) { notify(e.message, true); }
+        <td><span class="badge ${esc(g.status)}">${g.status === 'ACTIVE' ? 'AKTIVNA' : g.status === 'MAINTENANCE' ? 'ODRŽAVANJE' : esc(g.status)}</span></td>
+        <td><button data-edit="${g.id}">Edit</button> <button class="danger" data-del="${g.id}">Delete</button></td>
+      </tr>`).join('') || '<tr><td colspan="6">Nema registrovanih jedrilica</td></tr>';
+  }
 }
 
-function resetForm() {
+function resetGliderForm() {
   $('#gForm').reset();
   $('#gId').value = '';
   $('#formTitle').textContent = 'Add glider';
@@ -109,7 +115,7 @@ function resetForm() {
 $('#tbody').addEventListener('click', async e => {
   const { edit, del } = e.target.dataset;
   if (edit) {
-    const g = cache.find(x => x.id == edit);
+    const g = gliderCache.find(x => x.id == edit);
     if (!g) return;
     $('#gId').value = g.id;
     $('#gReg').value = g.registrationMarks;
@@ -120,7 +126,7 @@ $('#tbody').addEventListener('click', async e => {
     $('#gForm').scrollIntoView({ behavior: 'smooth' });
   }
   if (del && confirm('Delete this glider?')) {
-    try { await api(`/gliders/${del}`, { method: 'DELETE' }); notify('Glider deleted'); loadGliders(); }
+    try { await api(`/gliders/${del}`, { method: 'DELETE' }); notify('Glider deleted'); await loadGliders(); renderChart(); }
     catch (err) { notify(err.message, true); }
   }
 });
@@ -136,12 +142,62 @@ $('#gForm').addEventListener('submit', async e => {
   });
   try {
     await api(id ? `/gliders/${id}` : '/gliders', { method: id ? 'PUT' : 'POST', body });
-    resetForm(); notify('Glider saved'); loadGliders();
+    resetGliderForm(); notify('Glider saved'); await loadGliders();
   } catch (err) { notify(err.message, true); }
 });
-$('#gCancel').addEventListener('click', resetForm);
+$('#gCancel').addEventListener('click', resetGliderForm);
 
-/* ---------- Auth forms ---------- */
+/* letovi logovanje, tabela i chart*/
+async function loadFlights() {
+  const allFlights = await api('/flights');
+  const userFlights = allFlights.filter(f => f.username === localStorage.getItem('username'));
+
+  if (role() === 'ADMIN') {
+    flightCache = allFlights;
+  } else {
+    flightCache = userFlights;
+  }
+
+  $('#flightTbody').innerHTML = flightCache.map(f => `
+    <tr>
+      <td>${esc(f.date)}</td>
+      <td>${esc(f.registrationMarks)}</td>
+      <td>${f.durationMinutes} min</td>
+      <td><span class="badge ${esc(f.launchType)}">${f.launchType === 'WINCH' ? 'VITLO' : f.launchType === 'TOW' ? 'AEROZAPREGA' : esc(f.launchType)}</span></td>
+      <td>${esc(f.username)}</td>
+    </tr>`).join('') || '<tr><td colspan="5">Nema registrovanih letova</td></tr>';
+  renderChart();
+}
+
+function renderChart() {
+  const minutesByReg = {};
+  flightCache.forEach(f => { minutesByReg[f.registrationMarks] = (minutesByReg[f.registrationMarks] || 0) + f.durationMinutes; });
+  const labels = Object.keys(minutesByReg);
+  const hours = labels.map(l => +(minutesByReg[l] / 60).toFixed(2));
+
+  if (hoursChart) hoursChart.destroy();
+  hoursChart = new Chart($('#hoursChart'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Ukupno sati', data: hours, backgroundColor: '#1e6fd9' }] },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, title: { display: true, text: 'Sati naleta' } } }, plugins: { legend: { display: false } } }
+  });
+}
+
+$('#fForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const body = JSON.stringify({
+    date: $('#fDate').value,
+    durationMinutes: Number($('#fDuration').value),
+    launchType: $('#fLaunch').value,
+    gliderId: Number($('#fGlider').value)
+  });
+  try {
+    await api('/flights', { method: 'POST', body });
+    e.target.reset(); notify('Flight logged'); await loadFlights();
+  } catch (err) { notify(err.message, true); }
+});
+
+/*Auth forme?*/
 document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
 
 $('#loginForm').addEventListener('submit', async e => {

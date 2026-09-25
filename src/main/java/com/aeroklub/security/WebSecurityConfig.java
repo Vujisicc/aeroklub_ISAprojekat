@@ -1,7 +1,5 @@
 package com.aeroklub.security;
 
-import com.aeroklub.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -21,6 +19,10 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.aeroklub.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -36,8 +38,9 @@ public class WebSecurityConfig {
                 // Unauthenticated -> 401 (not 403) so the frontend can trigger token refresh
                 .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .authorizeHttpRequests(a -> a
-                        .requestMatchers("/", "/index.html", "/app.js", "/favicon.ico", "/error").permitAll()
+                        .requestMatchers("/", "/index.html", "/app.js", "/static/**", "/css/**", "/js/**", "/favicon.ico", "/error").permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh").permitAll()
+                        .requestMatchers("/**.js", "/**.css").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(new JwtAuthFilter(tokens), UsernamePasswordAuthenticationFilter.class)
                 .build();
